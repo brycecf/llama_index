@@ -54,6 +54,8 @@ GPT4_MODELS: Dict[str, int] = {
     "gpt-4o": 128000,
     "gpt-4o-2024-05-13": 128000,
     "gpt-4o-2024-08-06": 128000,
+    # Intended for research and evaluation
+    "chatgpt-4o-latest": 128000,
     "gpt-4o-mini": 128000,
     "gpt-4o-mini-2024-07-18": 128000,
     # 0613 models (function calling):
@@ -227,6 +229,14 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # checking whether the model is fine-tuned or not.
+    # fine-tuned model names these days look like:
+    # ft:gpt-3.5-turbo:acemeco:suffix:abc123
+    if model.startswith("ft-"):  # legacy fine-tuning
+        model = model.split(":")[0]
+    elif model.startswith("ft:"):
+        model = model.split(":")[1]
+
     is_chat_model_ = is_chat_model(model)
     is_old = "0314" in model or "0301" in model
 
@@ -285,7 +295,7 @@ def from_openai_message(openai_message: ChatCompletionMessage) -> ChatMessage:
     # function_call = None  # deprecated in OpenAI v 1.1.0
 
     additional_kwargs: Dict[str, Any] = {}
-    if openai_message.tool_calls is not None:
+    if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
         additional_kwargs.update(tool_calls=tool_calls)
 
