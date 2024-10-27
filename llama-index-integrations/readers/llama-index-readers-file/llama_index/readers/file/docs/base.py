@@ -15,7 +15,7 @@ from tenacity import retry, stop_after_attempt
 
 from fsspec import AbstractFileSystem
 
-from llama_index.core.readers.base import BaseReader
+from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.readers.file.base import get_default_fs, is_default_fs
 from llama_index.core.schema import Document
 
@@ -24,14 +24,11 @@ logger = logging.getLogger(__name__)
 RETRY_TIMES = 3
 
 
-class PDFReader(BaseReader):
+class PDFReader(BasePydanticReader):
     """PDF parser."""
 
-    def __init__(self, return_full_document: Optional[bool] = False) -> None:
-        """
-        Initialize PDFReader.
-        """
-        self.return_full_document = return_full_document
+    is_remote: bool = False
+    return_full_document: bool = False
 
     @retry(
         stop=stop_after_attempt(RETRY_TIMES),
@@ -97,8 +94,10 @@ class PDFReader(BaseReader):
             return docs
 
 
-class DocxReader(BaseReader):
+class DocxReader(BasePydanticReader):
     """Docx parser."""
+
+    is_remote: bool = False
 
     def load_data(
         self,
@@ -130,11 +129,12 @@ class DocxReader(BaseReader):
         return [Document(text=text, metadata=metadata or {})]
 
 
-class HWPReader(BaseReader):
+class HWPReader(BasePydanticReader):
     """Hwp Parser."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.is_remote = False
         self.FILE_HEADER_SECTION = "FileHeader"
         self.HWP_SUMMARY_SECTION = "\x05HwpSummaryInformation"
         self.SECTION_NAME_LENGTH = len("Section")
